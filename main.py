@@ -3,8 +3,6 @@ import os
 import subprocess
 from pytube import YouTube, Playlist
 
-#ffmpeg adds a few second to video, fix this bug
-
 def downloader():
 
     while True:
@@ -40,7 +38,7 @@ def to_mp3(folder):
     for i in os.listdir(folder):
         if ".mp3" not in i:
             new_name = os.path.splitext(i)[0] #removes extension
-            subprocess.run(f"ffmpeg -i \"{folder}/{i}\" \"{folder}/{new_name}.mp3\"", shell=True)
+            subprocess.run(f"ffmpeg -i \"{folder}/{i}\" -vn -q:a 0 -map a \"{folder}/{new_name}.mp3\"", shell=True)
             os.remove(f"{folder}/{i}")
 
 
