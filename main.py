@@ -1,5 +1,9 @@
 import sys
+import os
+import subprocess
 from pytube import YouTube, Playlist
+
+#ffmpeg adds a few second to video, fix this bug
 
 def downloader():
 
@@ -11,7 +15,8 @@ def downloader():
             try:
                 for video in p.videos:
                     stream = video.streams.filter(only_audio=True).order_by("abr").last()
-                    stream.download(output_path = f"C:/Users/jiozz/Desktop/youtube-downloader/{p.title}")
+                    stream.download(output_path = p.title)
+                to_mp3(p.title)
                 print("Success!")
             except:
                 print("An error has occured, enter a valid playlist URL")
@@ -21,6 +26,7 @@ def downloader():
                 yt = YouTube(video_url)
                 stream = yt.streams.filter(only_audio=True).order_by("abr").last()
                 stream.download(output_path = yt.title)
+                to_mp3(yt.title)
                 print("Success!")
             except:
                 print("An error has occured, enter a valid video URL")
@@ -29,5 +35,15 @@ def downloader():
         else:
             print("Enter valid mode")
     
+
+def to_mp3(folder):
+    for i in os.listdir(folder):
+        if ".mp3" not in i:
+            new_name = os.path.splitext(i)[0] #removes extension
+            subprocess.run(f"ffmpeg -i \"{folder}/{i}\" \"{folder}/{new_name}.mp3\"", shell=True)
+            os.remove(f"{folder}/{i}")
+
+
+
 if __name__ == "__main__":
     downloader()
