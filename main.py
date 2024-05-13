@@ -3,53 +3,47 @@ import os
 import subprocess
 from pytube import YouTube, Playlist
 
-def downloader():
-
-    path = input("Enter full path (nothing for cd):\n").replace('"', "")
-
+def main():
+    #gets path, url from user, and converts the video/s to .mp3
+    path = get_path()
     while True:
         mode = input("playlist or video? [p/v]\n")
         if mode == "p":
             playlist_url = input("url:\n")
             p = Playlist(playlist_url)
-            new_path = path + "/" + p.title
             try:
                 for video in p.videos:
-                    stream = video.streams.filter(only_audio=True).order_by("abr").last()
-                    stream.download(output_path = new_path)
-                to_mp3(new_path, None)
-                exit()
+                    downloader(path, video)
             except Exception as e:
                 print(e)
         elif mode == "v":
             video_url = input("url:\n")
             try:
                 yt = YouTube(video_url)
-                stream = yt.streams.filter(only_audio=True).order_by("abr").last()
-                stream.download(output_path = path)
-                to_mp3(path, yt.title)
-                exit()
+                downloader(path, yt)
             except Exception as e:
                 print(e)
         else:
             print("Enter valid mode")
     
 
-def to_mp3(folder, title):
+def downloader(path, obj):
+    #downloads video using pytube
+    print("downloading video...")
+    stream = obj.streams.filter(only_audio=True).order_by("abr").last()
+    stream.download(output_path = path)
+    print("converting to mp3...")
+    to_mp3(path, stream.default_filename)
 
-    if title == None: #playlist
-        for i in os.listdir(folder):
-            new_name = os.path.splitext(i)[0] #removes extension
-            subprocess.run(f"ffmpeg -i \"{folder}/{i}\" -vn -q:a 0 -map a \"{folder}/{new_name}.mp3\" -loglevel 0", shell=True)
-            os.remove(f"{folder}/{i}")
-    elif folder == "":
-        subprocess.run(f"ffmpeg -i \"{title}.webm\" -vn -q:a 0 -map a \"{title}.mp3\" -loglevel 0", shell=True)
-        os.remove(f"{title}.webm")
-    else:
-        subprocess.run(f"ffmpeg -i \"{folder}/{title}.webm\" -vn -q:a 0 -map a \"{folder}/{title}.mp3\" -loglevel 0", shell=True)
-        os.remove(f"{folder}/{title}.webm")
+def to_mp3(path, title):
+    #converts video to .mp3 format with ffmpeg
+    new_title = os.path.splitext(title)[0] + ".mp3" #changes name to new extension
+    subprocess.run(f"ffmpeg -i \"{path}{title}\" -vn -q:a 0 -map a \"{path}{new_title}\" -loglevel 0", shell=True)
+    os.remove(f"{path}{title}")
 
-
+def get_path():
+    #to-do
+    return ""
 
 if __name__ == "__main__":
-    downloader()
+    main()
