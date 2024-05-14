@@ -1,6 +1,7 @@
 import sys
 import os
 import subprocess
+import pickle
 from pytube import YouTube, Playlist
 
 def main():
@@ -42,8 +43,45 @@ def to_mp3(path, title):
     os.remove(f"{path}{title}")
 
 def get_path():
-    #to-do
-    return ""
+    #prompts user to select or add path, returns string of path to download
+    file_name = "paths.pk" #pickle file
+    data = get_data(file_name)
+    
+    while True:
+        print_paths(data)
+        user_input = input("select a path, or [p] to add:\n")
+        if user_input == "p" :
+            #improve compatibility of below code
+
+            new_path = input("enter path below:\n").replace("\"", "") #remove quotes from copying path via file explorer
+            if new_path[len(new_path)-1] != "/" and new_path[len(new_path)-1] != "\\": #add final slash for compatability with to_mp3() func
+                new_path += "\\" #make this back or foward slash depending on format given via path
+            data.append(new_path)
+            with open(file_name, "wb") as f:
+                pickle.dump(data, f)
+        else:
+            try:
+                if int(user_input) in range(0, len(data)):
+                    break
+            except:
+                print("error")
+    return data[int(user_input)]
+
+def get_data(file_name):
+    try:
+        with open(file_name, "rb") as f:
+            data = pickle.load(f)
+    except:
+        data = [""]
+    return data
+
+def print_paths(data):
+    #prints list of all pickled paths
+    for i in range(len(data)):
+        if i == 0:
+            print("0. -working dir-")
+        else:
+            print(str(i) + ". " + data[i])
 
 if __name__ == "__main__":
     main()
