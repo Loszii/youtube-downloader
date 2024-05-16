@@ -1,2 +1,1 @@
-A small python script using pytube and ffmpeg to download music from youtube.
-This script can handle playlists/videos, make sure to add ffmpeg to path and install pytube for it to work.
+A python script using yt-dlp and ffmpeg via subprocesses. This script can take any path and any youtube url to convert the video into a mp3 file. This is helpful for making songs for spotify local files and any other need for a downloaded mp3. The multi-song downloader is the most practical tool I coded, it uses the description of a video to find explicitly stated time stamps and split a single video into its downloadable sub-songs. With this tool you can turn any video easily into downloadable music.
