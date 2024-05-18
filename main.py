@@ -7,8 +7,11 @@ import json
 def main():
     #gets path, url from user, and converts the video/s to .mp3
     path = get_path()
+    if path != "" and not os.path.isdir(path): #make path if not already made
+        print("path not found, creating now...")
+        os.mkdir(path)
     while True:
-        mode = input("playlist | video | multi-song-video? [p/v/m]\n")
+        mode = input("playlist | video | chapters | exit [p/v/c/x]\n")
         if mode == "p":
             playlist_url = input("url:\n")
             try:
@@ -23,44 +26,43 @@ def main():
                 vid_downloader(path, video_url) 
             except Exception as e:
                 print(e)
-        elif mode == "m":
+        elif mode == "c":
             video_url = input("url:\n")
             try:
                 print("starting download..")
                 multi_downloader(path, video_url)
             except Exception as e:
                 print(e)
+        elif mode == "x":
+            sys.exit()
         else:
             print("Enter valid mode")
 
 def vid_downloader(path, url):
     #downloads a single video
-    subprocess.run(f"yt-dlp -f \"ba*\" \"{url}\" -o \"%(title)s.%(ext)s\" -P \"temp\" --no-playlist -q --no-warnings", shell=True)
+    subprocess.run(f"yt-dlp -q --no-warnings --no-playlist -f \"ba*\" -o \"%(title)s.%(ext)s\" -P \"temp\" \"{url}\"", shell=True)
     to_mp3(path)
 
 def playlist_downloader(path, url):
     #downloads all videos in a playlist
 
-    #first get the title for new dir
-    subprocess.run(f"yt-dlp -I 0 --write-info-json \"{url}\" -P \"temp\" -q --no-warnings")
+    subprocess.run(f"yt-dlp -q --no-warnings -I 0 --write-info-json -P \"temp\" \"{url}\"") #-I 0 downloads no videos, leaving just the json file for playlist
     playlist_info = os.listdir("temp")[0]
     playlist_name = format_name(json.load(open(f"temp/{playlist_info}", encoding="utf-8", errors="ignore"))["title"]) #gets playlist name from json and formats to become dir
-    os.remove(f"temp/{playlist_info}")
+    os.remove(f"temp/{playlist_info}") #removing json
 
     new_path = path_join(path, playlist_name)
-
-    #make new folder at new_path
     os.mkdir(new_path)
 
     #download all playlist videos
-    subprocess.run(f"yt-dlp -f \"ba*\" \"{url}\" -o \"%(title)s.%(ext)s\" -P \"temp\" --yes-playlist -q --no-warnings", shell=True)
+    subprocess.run(f"yt-dlp -q --no-warnings --yes-playlist -f \"ba*\" -o \"%(title)s.%(ext)s\" -P \"temp\" \"{url}\"", shell=True)
     to_mp3(new_path)
 
 def multi_downloader(path, url):
     #function for a video composed of multiple songs that have time stamps in the description
 
     #download all chapters and original video
-    subprocess.run(f"yt-dlp -f \"ba*\" \"{url}\" -o \"%(title)s.%(ext)s\" --split-chapters -o \"chapter:%(section_title)s.%(ext)s\" -P \"temp\" --write-info-json --no-playlist -q --no-warnings", shell=True)
+    subprocess.run(f"yt-dlp -q --no-warnings --no-playlist --write-info-json --split-chapters -f \"ba*\" -o \"%(title)s.%(ext)s\" -o \"chapter:%(section_title)s.%(ext)s\" -P \"temp\" \"{url}\"", shell=True)
     
     files = os.listdir("temp")
     for i in files:
@@ -77,14 +79,12 @@ def multi_downloader(path, url):
     os.remove(f"temp/{json_file}")
 
     new_path = path_join(path, non_split_file)
-
-    #make new folder at new_path
-    os.mkdir(new_path)
+    os.mkdir(new_path) #make folder for songs
 
     to_mp3(new_path)
 
 def to_mp3(path):
-    #converts video from temp to .mp3 format with ffmpeg
+    #converts video from temp to .mp3 format at path with ffmpeg
     files = os.listdir("temp")
     for title in files:
         new_title = os.path.splitext(title)[0] + ".mp3" #changes name to new extension
@@ -93,7 +93,6 @@ def to_mp3(path):
         #removing temp file
         os.remove(f"temp/{title}")
     os.rmdir(f"temp")
-
 
 def get_path():
     #prompts user to select or add path, returns string of path to download
@@ -106,23 +105,29 @@ def get_path():
         if user_input == "p" :
             #putting path into correct format
             new_path = input("enter path below:\n").replace("\"", "") #removes quotes from copying path via file explorer
-            if new_path[len(new_path)-1] != "/" and new_path[len(new_path)-1] != "\\": #add final slash for compatability with to_mp3() func
-                if "\\" in new_path:
-                    new_path += "\\"
-                else:
-                    new_path += "/"
-            #storing new path
-            data.append(new_path)
-            with open(file_name, "wb") as f:
-                pickle.dump(data, f)
+            if len(new_path) > 0 and new_path[len(new_path)-1] != "/" and new_path[len(new_path)-1] != "\\":
+                new_path = path_join(new_path, "") #add final slash for compatability with to_mp3() func
+            
+            if new_path in data:
+                print("path already listed...")
+            else:
+                if not os.path.isdir(new_path): #make path if not already made
+                    print("path not found, creating now...")
+                    os.mkdir(new_path)
+                
+                #storing new path
+                data.append(new_path)
+                with open(file_name, "wb") as f:
+                    pickle.dump(data, f)
+                return new_path
         else:
             try:
-                if int(user_input) in range(0, len(data)):
-                    break #path has been chosen
+                if int(user_input) in range(len(data)):
+                    return data[int(user_input)]
+                else:
+                    print(f"enter number in [{0}-{len(data)-1}]")
             except:
-                print("error")
-    return data[int(user_input)]
-
+                print("enter a number")
 
 def get_data(file_name):
     #gets pickled data
@@ -133,7 +138,6 @@ def get_data(file_name):
         data = [""]
     return data
 
-
 def print_paths(data):
     #prints list of all pickled paths
     for i in range(len(data)):
@@ -143,7 +147,7 @@ def print_paths(data):
             print(str(i) + ". " + data[i])
 
 def path_join(path, ext):
-    #custom path joiner
+    #custom path joiner, maintains path formatting throughout
     if "\\" in path:
         new_path = path + ext + "\\"
     else: 
