@@ -40,7 +40,7 @@ def main():
 
 def vid_downloader(path, url):
     #downloads a single video
-    subprocess.run(f"yt-dlp -q --no-warnings --no-playlist -f \"ba*\" -o \"%(title)s.%(ext)s\" -P \"temp\" \"{url}\"", shell=True)
+    subprocess.run(f"yt-dlp -q --no-warnings --no-playlist -f \"ba*\" -o \"%(title)s.%(ext)s\" -P \"temp\" \"{url}\"")
     to_mp3(path)
 
 def playlist_downloader(path, url):
@@ -55,14 +55,14 @@ def playlist_downloader(path, url):
     os.mkdir(new_path)
 
     #download all playlist videos
-    subprocess.run(f"yt-dlp -q --no-warnings --yes-playlist -f \"ba*\" -o \"%(title)s.%(ext)s\" -P \"temp\" \"{url}\"", shell=True)
+    subprocess.run(f"yt-dlp -q --no-warnings --yes-playlist -f \"ba*\" -o \"%(title)s.%(ext)s\" -P \"temp\" \"{url}\"")
     to_mp3(new_path)
 
 def multi_downloader(path, url):
     #function for a video composed of multiple songs that have time stamps in the description
 
     #download all chapters and original video
-    subprocess.run(f"yt-dlp -q --no-warnings --no-playlist --write-info-json --split-chapters -f \"ba*\" -o \"%(title)s.%(ext)s\" -o \"chapter:%(section_title)s.%(ext)s\" -P \"temp\" \"{url}\"", shell=True)
+    subprocess.run(f"yt-dlp -q --no-warnings --no-playlist --write-info-json --split-chapters -f \"ba*\" -o \"%(title)s.%(ext)s\" -o \"chapter:%(section_title)s.%(ext)s\" -P \"temp\" \"{url}\"")
     
     files = os.listdir("temp")
     for i in files:
@@ -89,7 +89,7 @@ def to_mp3(path):
     for title in files:
         new_title = os.path.splitext(title)[0] + ".mp3" #changes name to new extension
         print(f"downloading: {new_title}")
-        subprocess.run(f"ffmpeg -loglevel 0 -i \"temp/{title}\" -vn -q:a 0 -map a \"{path}{new_title}\"", shell=True) #to mp3
+        subprocess.run(f"ffmpeg -loglevel 0 -i \"temp/{title}\" -vn -q:a 0 -map a \"{path}{new_title}\"") #to mp3
         #removing temp file
         os.remove(f"temp/{title}")
     os.rmdir(f"temp")
